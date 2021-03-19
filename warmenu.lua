@@ -1,5 +1,6 @@
 WarMenu = { }
 WarMenu.__index = WarMenu
+WarMenu.indexes = {current = {}, selected = {}}
 
 -- Deprecated
 WarMenu.debug = false
@@ -12,6 +13,7 @@ end
 
 local menus = { }
 local keys = { down = 187, up = 188, left = 189, right = 190, select = 191, back = 194 }
+local key_cooldown = 0
 local optionCount = 0
 
 local currentKey = nil
@@ -382,8 +384,8 @@ function WarMenu.Button(text, subText)
 		if currentKey == keys.select then
 			pressed = true
 			PlaySoundFrontend(-1, getStyleProperty('buttonPressedSound').name, getStyleProperty('buttonPressedSound').set, true)
-		elseif currentKey == keys.left or currentKey == keys.right then
-			PlaySoundFrontend(-1, 'NAV_UP_DOWN', 'HUD_FRONTEND_DEFAULT_SOUNDSET', true)
+		-- elseif currentKey == keys.left or currentKey == keys.right then
+			-- PlaySoundFrontend(-1, 'NAV_UP_DOWN', 'HUD_FRONTEND_DEFAULT_SOUNDSET', true)
 		end
 	end
 
@@ -477,15 +479,27 @@ function WarMenu.CheckBox(text, checked, callback)
 	return pressed
 end
 
-function WarMenu.ComboBox(text, items, currentIndex, selectedIndex, callback)
+-- WarMenu.indexes = {current = {}, selected = {}}
+function WarMenu.ComboBox(text, items, callback)
 	if not currentMenu then
 		return
 	end
 
+	if not WarMenu.indexes.current[currentMenu.id .. text] then
+		WarMenu.indexes.current[currentMenu.id .. text] = 1
+	end
+
+	if not WarMenu.indexes.selected[currentMenu.id .. text] then
+		WarMenu.indexes.selected[currentMenu.id .. text] = 1
+	end
+
+	local selectedIndex = WarMenu.indexes.selected[currentMenu.id .. text]
+	local currentIndex = WarMenu.indexes.current[currentMenu.id .. text]
+
 	local itemsCount = #items
 	local selectedItem = items[currentIndex]
 	local isCurrent = currentMenu.currentOption == optionCount + 1
-	selectedIndex = selectedIndex or currentIndex
+
 
 	if itemsCount > 1 and isCurrent then
 		selectedItem = '← '..tostring(selectedItem)..' →'
@@ -495,7 +509,9 @@ function WarMenu.ComboBox(text, items, currentIndex, selectedIndex, callback)
 
 	if pressed then
 		selectedIndex = currentIndex
-	elseif isCurrent then
+	elseif currentKey == keys.left or currentKey == keys.right then
+		PlaySoundFrontend(-1, 'NAV_UP_DOWN', 'HUD_FRONTEND_DEFAULT_SOUNDSET', true)
+
 		if currentKey == keys.left then
 			if currentIndex > 1 then currentIndex = currentIndex - 1 else currentIndex = itemsCount end
 		elseif currentKey == keys.right then
@@ -503,8 +519,14 @@ function WarMenu.ComboBox(text, items, currentIndex, selectedIndex, callback)
 		end
 	end
 
+	WarMenu.indexes.selected[currentMenu.id .. text] = selectedIndex
+	WarMenu.indexes.current[currentMenu.id .. text] = currentIndex
+
 	if callback then callback(currentIndex, selectedIndex) end
-	return pressed, currentIndex
+	if pressed then
+		return currentIndex, items[currentIndex]
+	end
+	return nil
 end
 
 function WarMenu.Display()
@@ -525,7 +547,8 @@ function WarMenu.Display()
 
 			currentKey = nil
 
-			if IsDisabledControlJustReleased(0, keys.down) then
+			if IsDisabledControlPressed(0, keys.down) and key_cooldown <= GetGameTimer() then
+				key_cooldown = GetGameTimer() + 150
 				PlaySoundFrontend(-1, 'NAV_UP_DOWN', 'HUD_FRONTEND_DEFAULT_SOUNDSET', true)
 
 				if currentMenu.currentOption < optionCount then
@@ -533,7 +556,8 @@ function WarMenu.Display()
 				else
 					currentMenu.currentOption = 1
 				end
-			elseif IsDisabledControlJustReleased(0, keys.up) then
+			elseif IsDisabledControlPressed(0, keys.up) and key_cooldown <= GetGameTimer() then
+				key_cooldown = GetGameTimer() + 150
 				PlaySoundFrontend(-1, 'NAV_UP_DOWN', 'HUD_FRONTEND_DEFAULT_SOUNDSET', true)
 
 				if currentMenu.currentOption > 1 then
@@ -541,13 +565,17 @@ function WarMenu.Display()
 				else
 					currentMenu.currentOption = optionCount
 				end
-			elseif IsDisabledControlJustReleased(0, keys.left) then
+			elseif IsDisabledControlPressed(0, keys.left) and key_cooldown <= GetGameTimer() then
+				key_cooldown = GetGameTimer() + 150
 				currentKey = keys.left
-			elseif IsDisabledControlJustReleased(0, keys.right) then
+			elseif IsDisabledControlPressed(0, keys.right) and key_cooldown <= GetGameTimer() then
+				key_cooldown = GetGameTimer() + 150
 				currentKey = keys.right
-			elseif IsControlJustReleased(0, keys.select) then
+			elseif IsDisabledControlPressed(0, keys.select) and key_cooldown <= GetGameTimer() then
+				key_cooldown = GetGameTimer() + 150
 				currentKey = keys.select
-			elseif IsDisabledControlJustReleased(0, keys.back) then
+			elseif IsDisabledControlPressed(0, keys.back) and key_cooldown <= GetGameTimer() then
+				key_cooldown = GetGameTimer() + 150
 				if menus[currentMenu.previousMenu] then
 					setMenuVisible(currentMenu.previousMenu, true)
 					PlaySoundFrontend(-1, 'BACK', 'HUD_FRONTEND_DEFAULT_SOUNDSET', true)
