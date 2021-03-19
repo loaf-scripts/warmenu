@@ -506,10 +506,9 @@ function WarMenu.ComboBox(text, items, callback)
 	end
 
 	local pressed = WarMenu.Button(text, selectedItem)
-
 	if pressed then
 		selectedIndex = currentIndex
-	elseif currentKey == keys.left or currentKey == keys.right then
+	elseif (currentKey == keys.left or currentKey == keys.right) and currentMenu.currentOption == optionCount then
 		PlaySoundFrontend(-1, 'NAV_UP_DOWN', 'HUD_FRONTEND_DEFAULT_SOUNDSET', true)
 
 		if currentKey == keys.left then
