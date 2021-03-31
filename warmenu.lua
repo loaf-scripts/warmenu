@@ -12,8 +12,8 @@ end
 ---
 
 local menus = { }
-local keys = { down = 187, up = 188, left = 189, right = 190, select = 191, back = 194 }
-local key_cooldown = 0
+keys = { down = 187, up = 188, left = 189, right = 190, select = 191, back = 194 }
+key_cooldown = 0
 local optionCount = 0
 
 local currentKey = nil
@@ -24,8 +24,8 @@ local toolTipWidth = 0.153
 local spriteWidth = 0.027
 local spriteHeight = spriteWidth * GetAspectRatio()
 
-local titleHeight = 0.101
-local titleYOffset = 0.021
+local titleHeight = 0.08
+local titleYOffset = 0.012
 local titleFont = 1
 local titleScale = 1.0
 
@@ -192,7 +192,7 @@ local function drawTitle()
 	local y = getStyleProperty('y') + titleHeight / 2
 
 	if getStyleProperty('titleBackgroundSprite') then
-		DrawSprite(getStyleProperty('titleBackgroundSprite').dict, getStyleProperty('titleBackgroundSprite').name, x, y, getStyleProperty('width'), titleHeight, 0., 255, 255, 255, 255)
+		DrawSprite(getStyleProperty('titleBackgroundSprite').dict, getStyleProperty('titleBackgroundSprite').name, x, y, getStyleProperty('width'), titleHeight, 0., table.unpack(getStyleProperty('titleBackgroundColor')))
 	else
 		drawRect(x, y, getStyleProperty('width'), titleHeight, getStyleProperty('titleBackgroundColor'))
 	end
@@ -210,7 +210,7 @@ local function drawSubTitle()
 	drawRect(x, y, getStyleProperty('width'), buttonHeight, getStyleProperty('subTitleBackgroundColor'))
 
 	setTextParams(buttonFont, getStyleProperty('subTitleColor'), buttonScale, false)
-	drawText(currentMenu.subTitle, getStyleProperty('x') + buttonTextXOffset, y - buttonHeight / 2 + buttonTextYOffset)
+	drawText("~h~"..currentMenu.subTitle, getStyleProperty('x') + buttonTextXOffset, y - buttonHeight / 2 + buttonTextYOffset)
 
 	if optionCount > getStyleProperty('maxOptionCountOnScreen') then
 		setTextParams(buttonFont, getStyleProperty('subTitleColor'), buttonScale, false, false, true)
@@ -446,7 +446,7 @@ function WarMenu.MenuButton(text, id, subText)
 		return
 	end
 
-	local pressed = WarMenu.Button(text, subText)
+	local pressed = WarMenu.Button("~s~→ " .. text, subText)
 
 	if pressed then
 		currentMenu.currentOption = optionCount
@@ -539,8 +539,6 @@ function WarMenu.Display()
 		if currentMenu.aboutToBeClosed then
 			WarMenu.CloseMenu()
 		else
-			ClearAllHelpMessages()
-
 			drawTitle()
 			drawSubTitle()
 
